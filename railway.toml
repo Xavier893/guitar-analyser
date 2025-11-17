@@ -1,8 +1,8 @@
 [build]
-builder = "heroku/buildpacks:20"
-
-[env]
-PYTHONPATH = "./backend"
+builder = "paketobuildpacks/builder:base"
 
 [start]
 cmd = "uvicorn backend.main:app --host 0.0.0.0 --port $PORT"
+
+[build.env]
+PYTHONPATH = "backend"
