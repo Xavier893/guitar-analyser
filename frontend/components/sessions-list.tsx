@@ -1,51 +1,67 @@
-'use client'
+"use client";
 
-import { useRouter } from 'next/navigation'
-import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { formatDistanceToNow } from 'date-fns'
-import { Music, Clock, CheckCircle, AlertCircle, Upload, Calendar, FileText } from 'lucide-react'
+import { useRouter } from "next/navigation";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { formatDistanceToNow } from "date-fns";
+import {
+  Music,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  Upload,
+  Calendar,
+  FileText,
+} from "lucide-react";
 
 interface Session {
-  id: string
-  name: string
-  date: string
-  notes: string
-  createdAt: string
-  status: 'pending' | 'processing' | 'complete'
-  uploadStatus: 'pending' | 'uploaded' | 'analyzing'
-  score?: number
+  id: string;
+  name: string;
+  date: string;
+  notes: string;
+  createdAt: string;
+  status: "pending" | "processing" | "complete";
+  uploadStatus: "pending" | "uploaded" | "analyzing";
+  score?: number;
 }
 
-export default function SessionsList({ sessions, onRefresh }: { sessions: Session[], onRefresh: () => void }) {
-  const router = useRouter()
+export default function SessionsList({
+  sessions,
+  onRefresh,
+}: {
+  sessions: Session[];
+  onRefresh: () => void;
+}) {
+  const router = useRouter();
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'complete':
-        return <CheckCircle className="w-4 h-4 text-green-500" />
-      case 'processing':
-        return <AlertCircle className="w-4 h-4 text-yellow-500 animate-pulse" />
+      case "complete":
+        return <CheckCircle className="w-4 h-4 text-green-500" />;
+      case "processing":
+        return (
+          <AlertCircle className="w-4 h-4 text-yellow-500 animate-pulse" />
+        );
       default:
-        return <Upload className="w-4 h-4 text-muted-foreground" />
+        return <Upload className="w-4 h-4 text-muted-foreground" />;
     }
-  }
+  };
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case 'complete':
-        return 'Complete'
-      case 'processing':
-        return 'Processing'
+      case "complete":
+        return "Complete";
+      case "processing":
+        return "Processing";
       default:
-        return 'Pending'
+        return "Pending";
     }
-  }
+  };
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       {sessions.map((session) => (
-        <Card 
+        <Card
           key={session.id}
           className="border-border bg-card hover:bg-card/80 transition-colors cursor-pointer group"
           onClick={() => router.push(`/sessions/${session.id}`)}
@@ -68,12 +84,18 @@ export default function SessionsList({ sessions, onRefresh }: { sessions: Sessio
 
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Clock className="w-4 h-4" />
-                <span>{formatDistanceToNow(new Date(session.createdAt), { addSuffix: true })}</span>
+                <span>
+                  {formatDistanceToNow(new Date(session.createdAt), {
+                    addSuffix: true,
+                  })}
+                </span>
               </div>
 
               <div className="flex items-center gap-2 text-sm">
                 {getStatusIcon(session.status)}
-                <span className="text-muted-foreground">{getStatusLabel(session.status)}</span>
+                <span className="text-muted-foreground">
+                  {getStatusLabel(session.status)}
+                </span>
               </div>
 
               {session.notes && (
@@ -85,17 +107,20 @@ export default function SessionsList({ sessions, onRefresh }: { sessions: Sessio
 
               {session.score !== undefined && (
                 <div className="text-sm font-medium text-foreground">
-                  Score: <span className="text-primary">{session.score.toFixed(1)}/100</span>
+                  Score:{" "}
+                  <span className="text-primary">
+                    {session.score.toFixed(1)}/100
+                  </span>
                 </div>
               )}
             </div>
 
-            <Button 
+            <Button
               variant="outline"
-              className="w-full border-border text-foreground hover:bg-primary/10"
+              className="w-full border-primary/50 text-foreground hover:border-primary hover:bg-primary/5 transition-colors"
               onClick={(e) => {
-                e.stopPropagation()
-                router.push(`/sessions/${session.id}`)
+                e.stopPropagation();
+                router.push(`/sessions/${session.id}`);
               }}
             >
               View Session
@@ -104,5 +129,5 @@ export default function SessionsList({ sessions, onRefresh }: { sessions: Sessio
         </Card>
       ))}
     </div>
-  )
+  );
 }
