@@ -1,79 +1,119 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import SessionsList from '@/components/sessions-list'
-import Header from '@/components/header'
-import { ChevronDown } from 'lucide-react'
-import { fetchSessions } from '@/lib/api-client'
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import SessionsList from "@/components/sessions-list";
+import Header from "@/components/header";
+import { ChevronDown } from "lucide-react";
+import { fetchSessions } from "@/lib/api-client";
 
 interface Session {
-  id: string
-  name: string
-  date: string
-  notes: string
-  createdAt: string
-  status: 'pending' | 'processing' | 'complete'
-  uploadStatus: 'pending' | 'uploaded' | 'analyzing'
-  score?: number
+  id: string;
+  name: string;
+  date: string;
+  notes: string;
+  createdAt: string;
+  status: "pending" | "processing" | "complete";
+  uploadStatus: "pending" | "uploaded" | "analyzing";
+  score?: number;
 }
 
 export default function Home() {
-  const [sessions, setSessions] = useState<Session[]>([])
-  const [showCreateForm, setShowCreateForm] = useState(false)
-  const [formName, setFormName] = useState('')
-  const [formNotes, setFormNotes] = useState('')
-  const [formDate, setFormDate] = useState(new Date().toISOString().split('T')[0])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [isLoadingSessions, setIsLoadingSessions] = useState(true)
-  const router = useRouter()
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [formName, setFormName] = useState("");
+  const [formNotes, setFormNotes] = useState("");
+  const [formDate, setFormDate] = useState(
+    new Date().toISOString().split("T")[0]
+  );
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [isLoadingSessions, setIsLoadingSessions] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
-    loadSessions()
-  }, [])
+    loadSessions();
+  }, []);
 
   const loadSessions = async () => {
-    setIsLoadingSessions(true)
+    setIsLoadingSessions(true);
     try {
-      const data = await fetchSessions()
+      const data = await fetchSessions();
       // Map API response to session format
-      const sessionsList = (data.sessions || []).map((session: any) => ({
-        id: session.id,
-        name: session.name,
-        date: session.date || new Date().toISOString().split('T')[0],
-        notes: session.notes || session.session_notes || '',
-        createdAt: session.createdAt || new Date().toISOString(),
-        status: session.status || 'pending',
-        uploadStatus: session.uploadStatus || 'pending',
-        score: session.score,
-      }))
-      setSessions(sessionsList)
+      // Handle both array response and object with sessions property
+      const sessionsArray = Array.isArray(data) ? data : data.sessions || [];
+      const sessionsList = sessionsArray.map((session: any) => {
+        let score: number | undefined = session.score;
+
+        // Try to extract score from LLM Feedback if not present
+        if (!score && session["LLM Feedback"]) {
+          try {
+            let feedbackStr = session["LLM Feedback"];
+            if (typeof feedbackStr === "string") {
+              // Remove markdown code block if present (```json ... ```)
+              feedbackStr = feedbackStr
+                .replace(/^```json\s*\n?/, "")
+                .replace(/\n?```\s*$/, "");
+              const feedback = JSON.parse(feedbackStr);
+              score = feedback.score;
+            }
+          } catch (e) {
+            // Silently fail if JSON parsing fails
+            console.warn(
+              "Failed to parse LLM Feedback for session",
+              session.id
+            );
+          }
+        }
+
+        return {
+          id: session.id || `session_${session.row_number}`,
+          name: session["Session Name"] || session.name || "",
+          date:
+            session["Session Date"] ||
+            session.date ||
+            new Date().toISOString().split("T")[0],
+          notes:
+            session["Session Notes"] ||
+            session.notes ||
+            session.session_notes ||
+            "",
+          createdAt:
+            session.Date || session.createdAt || new Date().toISOString(),
+          status: session.status || "complete",
+          uploadStatus: session.uploadStatus || "uploaded",
+          score,
+        };
+      });
+      setSessions(sessionsList);
     } catch (err) {
-      console.error('Failed to load sessions:', err)
+      console.error("Failed to load sessions:", err);
       // Fallback to empty sessions or cached data
-      setSessions([])
+      setSessions([]);
     } finally {
-      setIsLoadingSessions(false)
+      setIsLoadingSessions(false);
     }
-  }
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const router = useRouter()
+  };
 
   const handleCreateSession = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
+    e.preventDefault();
+    setError("");
 
     if (!formName.trim()) {
-      setError('Session name is required')
-      return
+      setError("Session name is required");
+      return;
     }
 
-    setLoading(true)
+    setLoading(true);
 
     try {
       const newSession: Session = {
@@ -82,25 +122,28 @@ export default function Home() {
         date: formDate,
         notes: formNotes,
         createdAt: new Date().toISOString(),
-        status: 'pending',
-        uploadStatus: 'pending',
-      }
+        status: "pending",
+        uploadStatus: "pending",
+      };
 
-      setSessions([newSession, ...sessions])
-      sessionStorage.setItem(`session_${newSession.id}`, JSON.stringify(newSession))
-      setFormName('')
-      setFormNotes('')
-      setFormDate(new Date().toISOString().split('T')[0])
-      setShowCreateForm(false)
-      
+      setSessions([newSession, ...sessions]);
+      sessionStorage.setItem(
+        `session_${newSession.id}`,
+        JSON.stringify(newSession)
+      );
+      setFormName("");
+      setFormNotes("");
+      setFormDate(new Date().toISOString().split("T")[0]);
+      setShowCreateForm(false);
+
       // Redirect to session detail after creation
-      router.push(`/sessions/${newSession.id}`)
+      router.push(`/sessions/${newSession.id}`);
     } catch (err) {
-      setError('An error occurred while creating the session')
+      setError("An error occurred while creating the session");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -108,14 +151,13 @@ export default function Home() {
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Your Sessions</h1>
-            <p className="text-muted-foreground mt-2">Manage and analyze your guitar recordings</p>
+            <h1 className="text-3xl font-bold text-foreground">My Sessions</h1>
           </div>
-          <Button 
+          <Button
             onClick={() => setShowCreateForm(!showCreateForm)}
             className="bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-2"
           >
-            {showCreateForm ? 'Cancel' : 'New Session'}
+            {showCreateForm ? "Cancel" : "New Session"}
             {showCreateForm && <ChevronDown className="w-4 h-4 rotate-180" />}
           </Button>
         </div>
@@ -124,7 +166,9 @@ export default function Home() {
           <Card className="mb-8 border-border bg-card">
             <CardHeader>
               <CardTitle>Create New Session</CardTitle>
-              <CardDescription>Set up a new guitar analysis session</CardDescription>
+              <CardDescription>
+                Set up a new guitar analysis session
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleCreateSession} className="space-y-6">
@@ -192,7 +236,7 @@ export default function Home() {
                     disabled={loading}
                     className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
                   >
-                    {loading ? 'Creating...' : 'Create Session'}
+                    {loading ? "Creating..." : "Create Session"}
                   </Button>
                 </div>
               </form>
@@ -203,9 +247,11 @@ export default function Home() {
         {sessions.length === 0 ? (
           <Card className="border-border bg-card">
             <CardContent className="pt-12 pb-12 text-center">
-              <p className="text-muted-foreground mb-4">{isLoadingSessions ? 'Loading sessions...' : 'No sessions yet'}</p>
+              <p className="text-muted-foreground mb-4">
+                {isLoadingSessions ? "Loading sessions..." : "No sessions yet"}
+              </p>
               {!isLoadingSessions && (
-                <Button 
+                <Button
                   onClick={() => setShowCreateForm(true)}
                   variant="outline"
                   className="border-border"
@@ -220,5 +266,5 @@ export default function Home() {
         )}
       </div>
     </div>
-  )
+  );
 }
