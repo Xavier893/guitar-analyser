@@ -5,21 +5,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ChevronDown, ChevronUp } from 'lucide-react'
 
 interface AnalysisData {
-  technique: string
-  timing: {
-    bpm: number
-    accuracy: number
-  }
-  pitch: {
-    stability: number
-    cents: number
-  }
-  tone: {
-    brightness: number
-    sustain: number
-  }
-  feedback: string[]
-  rawFeatures: Record<string, any>
+  bpm?: number
+  timing_accuracy?: number
+  timing_stability?: number
+  pitch_stability?: number
+  pitch_deviation_cents?: number
+  sustain?: number
+  note_count?: number
+  technique?: string
+  feedback?: string[]
+  rawFeatures?: Record<string, any>
 }
 
 export default function AnalysisResults({ data }: { data: AnalysisData }) {
@@ -56,38 +51,36 @@ export default function AnalysisResults({ data }: { data: AnalysisData }) {
           <CardDescription>Detailed breakdown of your guitar performance</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div>
-            <h3 className="text-sm font-medium text-foreground mb-2">Technique</h3>
-            <p className="text-sm text-muted-foreground">{data.technique}</p>
-          </div>
-
           <div className="grid grid-cols-2 gap-4">
-            <MetricCard label="BPM" value={data.timing.bpm} max={200} />
-            <MetricCard label="Timing Accuracy" value={data.timing.accuracy} unit="%" />
-            <MetricCard label="Pitch Stability" value={data.pitch.stability} unit="%" />
-            <MetricCard label="Pitch Deviation" value={Math.abs(data.pitch.cents)} unit="¢" max={100} />
-            <MetricCard label="Tone Brightness" value={data.tone.brightness} unit="%" />
-            <MetricCard label="Sustain" value={data.tone.sustain} unit="ms" max={5000} />
+            {data.bpm !== undefined && <MetricCard label="BPM" value={data.bpm} max={200} />}
+            {data.timing_accuracy !== undefined && <MetricCard label="Timing Accuracy" value={Math.round(data.timing_accuracy * 100)} unit="%" max={100} />}
+            {data.timing_stability !== undefined && <MetricCard label="Timing Stability" value={Math.round(data.timing_stability * 100)} unit="%" max={100} />}
+            {data.pitch_stability !== undefined && <MetricCard label="Pitch Stability" value={Math.round(data.pitch_stability * 100)} unit="%" max={100} />}
+            {data.pitch_deviation_cents !== undefined && <MetricCard label="Pitch Deviation" value={Math.abs(data.pitch_deviation_cents)} unit="¢" max={100} />}
+            {data.sustain !== undefined && <MetricCard label="Sustain" value={data.sustain.toFixed(4)} unit="" max={0.1} />}
+            {data.note_count !== undefined && <MetricCard label="Note Count" value={data.note_count} unit="" />}
           </div>
         </CardContent>
       </Card>
 
-      <Card className="border-border bg-card">
-        <CardHeader>
-          <CardTitle>Feedback</CardTitle>
-          <CardDescription>Actionable insights for improvement</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ul className="space-y-2">
-            {data.feedback.map((item, idx) => (
-              <li key={idx} className="flex gap-3 text-sm">
-                <span className="text-primary font-bold">•</span>
-                <span className="text-foreground">{item}</span>
-              </li>
-            ))}
-          </ul>
-        </CardContent>
-      </Card>
+      {data.feedback && data.feedback.length > 0 && (
+        <Card className="border-border bg-card">
+          <CardHeader>
+            <CardTitle>Feedback</CardTitle>
+            <CardDescription>Actionable insights for improvement</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2">
+              {data.feedback.map((item, idx) => (
+                <li key={idx} className="flex gap-3 text-sm">
+                  <span className="text-primary font-bold">•</span>
+                  <span className="text-foreground">{item}</span>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="border-border bg-card">
         <button
@@ -104,7 +97,7 @@ export default function AnalysisResults({ data }: { data: AnalysisData }) {
             <ChevronDown className="w-4 h-4 text-muted-foreground" />
           )}
         </button>
-        {expanded && (
+        {expanded && data.rawFeatures && (
           <CardContent className="border-t border-border">
             <pre className="text-xs bg-muted p-4 rounded-lg overflow-auto max-h-96 text-foreground">
               {JSON.stringify(data.rawFeatures, null, 2)}

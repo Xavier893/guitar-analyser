@@ -1,4 +1,4 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || ''
+const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'
 
 export async function apiCall(
   endpoint: string,
@@ -15,7 +15,7 @@ export async function apiCall(
     headers.Authorization = `Bearer ${token}`
   }
 
-  const response = await fetch(`${API_BASE}${endpoint}`, {
+  const response = await fetch(`${BACKEND_API_URL}${endpoint}`, {
     ...options,
     headers,
   })
@@ -34,4 +34,35 @@ export async function apiCall(
   }
 
   return data
+}
+
+export async function uploadAudioFile(
+  file: File,
+  sessionName: string,
+  sessionDate: string,
+  sessionNotes?: string
+) {
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('session_name', sessionName)
+  formData.append('session_date', sessionDate)
+  if (sessionNotes) {
+    formData.append('session_notes', sessionNotes)
+  }
+
+  const response = await fetch(`${BACKEND_API_URL}/analyze`, {
+    method: 'POST',
+    body: formData,
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.message || 'Upload failed')
+  }
+
+  return await response.json()
+}
+
+export async function fetchSessions() {
+  return apiCall('/sessions')
 }

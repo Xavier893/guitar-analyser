@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import SessionsList from '@/components/sessions-list'
 import Header from '@/components/header'
 import { ChevronDown } from 'lucide-react'
+import { fetchSessions } from '@/lib/api-client'
 
 interface Session {
   id: string
@@ -21,33 +22,44 @@ interface Session {
 }
 
 export default function Home() {
-  const [sessions, setSessions] = useState<Session[]>([
-    {
-      id: '1',
-      name: 'Blues Improvisation',
-      date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      notes: 'A quick blues improvisation session',
-      createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-      status: 'complete',
-      uploadStatus: 'analyzing',
-      score: 87,
-    },
-    {
-      id: '2',
-      name: 'Jazz Standards',
-      date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      notes: 'Practice session for jazz standards',
-      createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-      status: 'complete',
-      uploadStatus: 'analyzing',
-      score: 92,
-    },
-  ])
-  
+  const [sessions, setSessions] = useState<Session[]>([])
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [formName, setFormName] = useState('')
   const [formNotes, setFormNotes] = useState('')
   const [formDate, setFormDate] = useState(new Date().toISOString().split('T')[0])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [isLoadingSessions, setIsLoadingSessions] = useState(true)
+  const router = useRouter()
+
+  useEffect(() => {
+    loadSessions()
+  }, [])
+
+  const loadSessions = async () => {
+    setIsLoadingSessions(true)
+    try {
+      const data = await fetchSessions()
+      // Map API response to session format
+      const sessionsList = (data.sessions || []).map((session: any) => ({
+        id: session.id,
+        name: session.name,
+        date: session.date || new Date().toISOString().split('T')[0],
+        notes: session.notes || session.session_notes || '',
+        createdAt: session.createdAt || new Date().toISOString(),
+        status: session.status || 'pending',
+        uploadStatus: session.uploadStatus || 'pending',
+        score: session.score,
+      }))
+      setSessions(sessionsList)
+    } catch (err) {
+      console.error('Failed to load sessions:', err)
+      // Fallback to empty sessions or cached data
+      setSessions([])
+    } finally {
+      setIsLoadingSessions(false)
+    }
+  }
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
@@ -191,18 +203,20 @@ export default function Home() {
         {sessions.length === 0 ? (
           <Card className="border-border bg-card">
             <CardContent className="pt-12 pb-12 text-center">
-              <p className="text-muted-foreground mb-4">No sessions yet</p>
-              <Button 
-                onClick={() => setShowCreateForm(true)}
-                variant="outline"
-                className="border-border"
-              >
-                Create your first session
-              </Button>
+              <p className="text-muted-foreground mb-4">{isLoadingSessions ? 'Loading sessions...' : 'No sessions yet'}</p>
+              {!isLoadingSessions && (
+                <Button 
+                  onClick={() => setShowCreateForm(true)}
+                  variant="outline"
+                  className="border-border"
+                >
+                  Create your first session
+                </Button>
+              )}
             </CardContent>
           </Card>
         ) : (
-          <SessionsList sessions={sessions} onRefresh={() => {}} />
+          <SessionsList sessions={sessions} onRefresh={loadSessions} />
         )}
       </div>
     </div>

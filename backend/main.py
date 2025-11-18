@@ -16,7 +16,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-N8N_WEBHOOK_URL = "https://xavas.app.n8n.cloud/webhook-test/guitar-analyser"
+N8N_WEBHOOK_URL = "https://xavas.app.n8n.cloud/webhook/guitar-analyser"
 
 def compute_pitch_track(y, sr):
     """Return pitch (Hz) over time using librosa.yin."""

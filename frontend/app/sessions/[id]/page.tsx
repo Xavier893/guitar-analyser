@@ -9,6 +9,17 @@ import FileUpload from '@/components/file-upload'
 import AnalysisResults from '@/components/analysis-results'
 import { ArrowLeft, Music, Clock, Calendar, FileText } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
+import { uploadAudioFile } from '@/lib/api-client'
+
+interface AnalysisData {
+  bpm?: number
+  timing_accuracy?: number
+  timing_stability?: number
+  pitch_stability?: number
+  pitch_deviation_cents?: number
+  sustain?: number
+  note_count?: number
+}
 
 interface Session {
   id: string
@@ -18,23 +29,7 @@ interface Session {
   createdAt: string
   status: 'pending' | 'processing' | 'complete'
   uploadStatus: 'pending' | 'uploaded' | 'analyzing'
-  analysisData?: {
-    technique: string
-    timing: {
-      bpm: number
-      accuracy: number
-    }
-    pitch: {
-      stability: number
-      cents: number
-    }
-    tone: {
-      brightness: number
-      sustain: number
-    }
-    feedback: string[]
-    rawFeatures: Record<string, any>
-  }
+  analysisData?: AnalysisData
 }
 
 export default function SessionDetailPage() {
@@ -68,38 +63,33 @@ export default function SessionDetailPage() {
     setError('')
 
     try {
-      // Simulate analysis delay
-      await new Promise(resolve => setTimeout(resolve, 2000))
-
-      // Update session with mock analysis data
-      if (session) {
-        const updatedSession = {
-          ...session,
-          uploadStatus: 'uploaded',
-          status: 'complete',
-          analysisData: {
-            technique: 'Fingerstyle',
-            timing: { bpm: 120, accuracy: 94 },
-            pitch: { stability: 88, cents: 2 },
-            tone: { brightness: 75, sustain: 82 },
-            feedback: [
-              'Great timing consistency',
-              'Excellent pitch stability',
-              'Good tone control',
-              'Consider working on sustain length',
-            ],
-            rawFeatures: {
-              frequency_content: { mean: 450, std: 120 },
-              rms_energy: 0.65,
-              spectral_centroid: 2400,
-            },
-          },
-        }
-        setSession(updatedSession)
-        sessionStorage.setItem(`session_${sessionId}`, JSON.stringify(updatedSession))
+      if (!session) {
+        setError('Session not found')
+        return
       }
+
+      // Upload file to backend API
+      const response = await uploadAudioFile(
+        file,
+        session.name,
+        session.date,
+        session.notes
+      )
+
+      // Extract features from response
+      const analysisData = response.features || response.sent?.features
+      
+      // Update session with analysis data
+      const updatedSession = {
+        ...session,
+        uploadStatus: 'uploaded',
+        status: 'complete',
+        analysisData: analysisData,
+      }
+      setSession(updatedSession)
+      sessionStorage.setItem(`session_${sessionId}`, JSON.stringify(updatedSession))
     } catch (err) {
-      setError('An error occurred during upload')
+      setError(err instanceof Error ? err.message : 'An error occurred during upload')
     } finally {
       setUploading(false)
     }
