@@ -15,25 +15,34 @@ export async function apiCall(
     headers.Authorization = `Bearer ${token}`
   }
 
-  const response = await fetch(`${BACKEND_API_URL}${endpoint}`, {
-    ...options,
-    headers,
-  })
+  try {
+    console.log(`🔗 API Call: ${BACKEND_API_URL}${endpoint}`)
+    const response = await fetch(`${BACKEND_API_URL}${endpoint}`, {
+      ...options,
+      headers,
+    })
 
-  if (response.status === 401) {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('token')
-      window.location.href = '/login'
+    console.log(`📊 Response Status: ${response.status}`)
+
+    if (response.status === 401) {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('token')
+        window.location.href = '/login'
+      }
     }
+
+    const data = await response.json()
+    console.log(`✅ Response Data:`, data)
+
+    if (!response.ok) {
+      throw new Error(data.message || `API request failed with status ${response.status}`)
+    }
+
+    return data
+  } catch (error) {
+    console.error(`❌ API Error:`, error)
+    throw error
   }
-
-  const data = await response.json()
-
-  if (!response.ok) {
-    throw new Error(data.message || 'API request failed')
-  }
-
-  return data
 }
 
 export async function uploadAudioFile(
@@ -65,4 +74,8 @@ export async function uploadAudioFile(
 
 export async function fetchSessions() {
   return apiCall('/sessions')
+}
+
+export async function fetchSessionById(sessionId: string) {
+  return apiCall(`/sessions/${sessionId}`)
 }
