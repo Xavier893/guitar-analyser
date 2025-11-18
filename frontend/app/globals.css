@@ -9,7 +9,7 @@
 @theme inline {
   --font-sans: 'Inter', 'InterFallback';
   
-  /* Color Palette - Light Mode */
+  /* Color Palette - Dark Mode Only */
   --color-primary: #3b82f6;
   --color-primary-foreground: #ffffff;
   
@@ -19,17 +19,17 @@
   --color-accent: #8b5cf6;
   --color-accent-foreground: #ffffff;
   
-  --color-background: #ffffff;
-  --color-foreground: #0f172a;
+  --color-background: #0f172a;
+  --color-foreground: #f1f5f9;
   
-  --color-card: #f8fafc;
-  --color-card-foreground: #0f172a;
+  --color-card: #1e293b;
+  --color-card-foreground: #f1f5f9;
   
-  --color-muted: #94a3b8;
-  --color-muted-foreground: #64748b;
+  --color-muted: #64748b;
+  --color-muted-foreground: #94a3b8;
   
-  --color-border: #e2e8f0;
-  --color-input: #f1f5f9;
+  --color-border: #334155;
+  --color-input: #1e293b;
   
   --color-destructive: #ef4444;
   --color-destructive-foreground: #ffffff;
@@ -48,28 +48,11 @@
 
 @layer base {
   :root {
-    color-scheme: light;
-  }
-
-  :root.dark {
-    --color-background: #0f172a;
-    --color-foreground: #f1f5f9;
-    
-    --color-card: #1e293b;
-    --color-card-foreground: #f1f5f9;
-    
-    --color-muted: #64748b;
-    --color-muted-foreground: #94a3b8;
-    
-    --color-border: #334155;
-    --color-input: #1e293b;
-    
     color-scheme: dark;
   }
 
   body {
     @apply bg-background text-foreground;
-    transition: background-color 0.3s, color 0.3s;
   }
 
   * {
