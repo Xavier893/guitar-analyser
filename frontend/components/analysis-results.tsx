@@ -131,6 +131,12 @@ export default function AnalysisResults({ data }: { data: AnalysisData }) {
   return (
     <div className="space-y-6">
       {/* Overall Score */}
+      {/* Overall Score */}
+      {/* Overall Score */}
+      {/* Overall Score */}
+      {/* Overall Score */}
+      {/* Overall Score */}
+      {/* Overall Score */}
       {llmData?.score !== undefined && (
         <Card className="border-border bg-gradient-to-br from-primary/10 via-card to-card overflow-hidden">
           <CardContent className="pt-8">
